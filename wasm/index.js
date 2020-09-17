@@ -7,12 +7,14 @@ const runWasm = async () => {
   console.log("WHAT");
   // Instantiate our wasm module
   let bp = await init("./pkg/buttplug_wasm_bg.wasm");
-  ButtplugClientWASM.scan_bluetooth().then((b) => console.log("Has bluetooth: " + b));
+  // ButtplugClientWASM.scan_bluetooth().then((b) => console.log("Has bluetooth: " + b));
   // Call the Add function export from wasm, save the result
   console.log("connecting!");
-  //const client = await bp.ButtplugClientWASM.connect();
-  let client = await ButtplugClientWASM.connect_websocket();
+  const client = await ButtplugClientWASM.connect_embedded();
+  //let client = await ButtplugClientWASM.connect_websocket();
   console.log("connected!");
-  await client.start_scanning();
+  document.getElementById("scan_button").addEventListener("click", async () => {
+    await client.start_scanning();
+  });
 };
 runWasm().then("Done!");

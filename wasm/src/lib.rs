@@ -1,8 +1,9 @@
 #[macro_use]
-extern crate log;
+extern crate tracing;
 
 mod utils;
 mod websocket_client_connector;
+mod webbluetooth_manager;
 
 use buttplug::{
     client::{ButtplugClient, ButtplugClientEvent},
@@ -17,8 +18,8 @@ use async_channel::Receiver;
 use wasm_bindgen::prelude::*;
 use std::sync::Arc;
 use js_sys::Promise;
+use web_sys;
 
-use web_sys::{self, Navigator};
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -30,7 +31,7 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 pub fn start() -> Result<(), JsValue> {
     // print pretty errors in wasm https://github.com/rustwasm/console_error_panic_hook
     // This is not needed for tracing_wasm to work, but it is a common tool for getting proper error line numbers for panics.
-    //console_error_panic_hook::set_once();
+    console_error_panic_hook::set_once();
 
     // Add this line:
     tracing_wasm::set_as_global_default();
@@ -50,7 +51,8 @@ impl ButtplugClientWASM {
     info!("Trying to connect!");
     future_to_promise(async move {
       info!("Now in future!");
-      let mut connector = ButtplugInProcessClientConnector::new("Example Server", 0);     
+      let mut connector = ButtplugInProcessClientConnector::new("Example Server", 0);
+      connector.server_ref().add_comm_manager::<webbluetooth_manager::WebBluetoothCommunicationManager>();
       let (client, mut event_stream) = ButtplugClient::connect("Example Client", connector)
         .await
         .unwrap();
@@ -74,12 +76,6 @@ impl ButtplugClientWASM {
         client: Arc::new(client)
       }.into())
     }) 
-  }
-
-  pub async fn scan_bluetooth() -> Promise {
-    let nav = web_sys::window().unwrap().navigator();
-    //nav.bluetooth().get_availability();
-    return nav.bluetooth().request_device();
   }
 
   pub fn start_scanning(&self) -> Promise {
